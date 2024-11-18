@@ -113,6 +113,6 @@ jobs:
       # - name: Trigger release workflow
       #   if: env.FIX_CVE == 'true'
       #   uses: github.actions@v3
-        with:
-          workflow: release.yml
-          ref: main
+        # with:
+        #   workflow: release.yml
+        #   ref: main
