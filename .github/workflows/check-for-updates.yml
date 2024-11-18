@@ -35,7 +35,7 @@ jobs:
         run: |
           chainctl auth configure-docker
   
-      - name: 'ENV Setup'
+      - name: 'Env Setup'
         run: |
           echo "REDIS_IMAGE_FULL_REF=${{ env.REDIS_IMAGE }}:${{ env.REDIS_IMAGE_TAG }}" >> $GITHUB_ENV
       
@@ -59,6 +59,7 @@ jobs:
         with:
           name: redis-image-digest
           path: digest.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compare digests
         id: compare_digests
@@ -80,10 +81,12 @@ jobs:
         run: echo "${{ env.CURRENT_DIGEST }}" > digest.txt
 
       - name: Upload current digest as artifact
+        if: env.DIGEST_CHANGED == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: redis-image-digest
           path: digest.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run chainctl images diff
         if: env.DIGEST_CHANGED == 'true'
