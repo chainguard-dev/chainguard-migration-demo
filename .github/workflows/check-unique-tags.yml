@@ -48,7 +48,7 @@ jobs:
         run: |
           CURRENT_UNIQUE_IMAGE=$(yq '.image.tag' helm/redis/values.yaml)
           echo "Extracted Unique Tags: $CURRENT_UNIQUE_IMAGE"
-          echo "currentunique-tag=$CURRENT_UNIQUE_IMAGE" >> $GITHUB_ENV
+          echo "CURRENT_UNIQUE_TAG=$CURRENT_UNIQUE_IMAGE" >> $GITHUB_ENV
 
       - name: 'Env Setup'
         run: |
@@ -58,7 +58,7 @@ jobs:
         id: get_current_unique_tag
         run: |
           LATEST_UNIQUE_TAG=$(crane ls ${{ env.REDIS_IMAGE_FULL_REF }} | grep -E '^[^ ]+-[0-9]{12}$' | grep -v '^latest' | sort -Vr | head -n 1)
-          echo "latest-unique-tag=${LATEST_UNIQUE_TAG}" >> $GITHUB_ENV
+          echo "LATEST_UNIQUE_TAG=${LATEST_UNIQUE_TAG}" >> $GITHUB_ENV
 
       - name: Compare unique tags
         id: compare_unique_tags
