@@ -1,0 +1,22 @@
+ARG BUILDER_IMAGE=registry.access.redhat.com/ubi9/openjdk-17
+ARG RUNTIME_IMAGE=registry.access.redhat.com/ubi9/openjdk-17-runtime
+ARG PACKAGE_MANAGER=microdnf
+ARG PACKAGE_MANAGER_CMD=
+ARG PACKAGE_MANAGER_CMD_FLAG=y
+
+FROM ${BUILDER_IMAGE} as build
+USER 0
+RUN echo "installing packages"
+SHELL ["/bin/bash", "-c", "$PACKAGE_MANAGER", "$PACKAGE_MANAGER_CMD", "-$PACKAGE_MANAGER_CMD_FLAG", "maven", "git"]
+WORKDIR /app
+RUN git clone --depth=1 https://github.com/vert-x3/vertx-examples.git
+WORKDIR /app/vertx-examples/redis-examples
+COPY docker/vertx/pom.xml .
+RUN mvn clean package
+
+FROM ${RUNTIME_IMAGE}
+WORKDIR /app
+COPY --from=build /app/vertx-examples/redis-examples/target/vertx-redis-client-example-1.0.jar /app/vertx-redis-client.jar
+EXPOSE 8080
+ENTRYPOINT ["java"]
+CMD ["-jar", "/app/vertx-redis-client.jar"]

@@ -1,0 +1,114 @@
+name: build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  REDIS_IMAGE_NAME: "cgr.dev/cgr-demo.com/redis-server-bitnami:latest"
+  JAVA_BUILDER_IMAGE: "registry.access.redhat.com/ubi9/openjdk-17"
+  JAVA_BUILDER_IMAGE_PACKAGE_MANAGER: "microdnf"
+  JAVA_BUILDER_IMAGE_PACKAGE_MANAGER_CMD: "install"
+  JAVA_BUILDER_IMAGE_PACKAGE_MANAGER_CMD_FLAG: "-y"
+  JAVA_RUNTIME_IMAGE: "registry.access.redhat.com/ubi9/openjdk-17-runtime"
+  VERTX_IMAGE_NAME: "cgr-demo-vertx-redis-client:latest"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+    
+    - uses: actions/checkout@v4
+      with:
+          fetch-depth: 1
+    
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@v3.7.0
+    
+    - uses: azure/setup-helm@v4.2.0
+      id: install
+    
+    - uses: chainguard-dev/setup-chainctl@v0.2.4
+      with:
+        identity: "4cf15780a13a9b6576d8b357e6524554c8c12a18/00fd46c815996c70"
+    
+    - name: 'Auth to Registry'
+      run: |
+        chainctl auth configure-docker
+
+    - name: 'Verify Redis Image Signature && pre-pull image'
+      run: |
+        cosign verify \
+            --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+            --certificate-identity=https://github.com/chainguard-images/images-private/.github/workflows/release.yaml@refs/heads/main \
+            ${{ env.REDIS_IMAGE_NAME }} | jq        
+        docker pull ${{ env.REDIS_IMAGE_NAME }}
+    
+    - name: Add Bitnami Helm repository
+      run: |
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+        helm repo update
+
+    - name: Create k8s Kind Cluster
+      uses: helm/kind-action@v1
+      with:
+        cluster_name: kind-smoke-test
+
+    - name: Check if image is available in kind cluster
+      run: |
+        kind load docker-image ${{ env.REDIS_IMAGE_NAME }} --name kind-smoke-test
+        echo "Image loaded into Kind cluster"
+
+    - name: Deploy Redis Image using Helm
+      run: |
+        helm install release-redis bitnami/redis \
+          --values helm/redis/values.yaml \
+          --namespace default --create-namespace
+
+    - name: Verify Redis Successful Deployment
+      run: |
+        kubectl get all -n default
+        kubectl rollout status deployment.apps/release-redis-master --timeout=120s
+        kubectl get all -n default
+
+    # Build the Vertx Redis Client image
+    - name: Build Docker image
+      run: |
+        docker build \
+            --build-arg BUILDER_IMAGE=${{ env.JAVA_BUILDER_IMAGE }} \
+            --build-arg PACKAGE_MANAGER=${{ env.JAVA_BUILDER_IMAGE_PACKAGE_MANAGER }} \
+            --build-arg PACKAGE_MANAGER_CMD=${{ env.JAVA_BUILDER_IMAGE_PACKAGE_MANAGER_CMD }} \
+            --build-arg PACKAGE_MANAGER_CMD_FLAG=${{ env.JAVA_BUILDER_IMAGE_PACKAGE_MANAGER_CMD_FLAG }} \
+            --build-arg RUNTIME_IMAGE=${{ env.JAVA_RUNTIME_IMAGE }} \
+            -f docker/vertx/vertx-redis-client-Dockerfile \
+            -t localhost:5000/${{ env.VERTX_IMAGE_NAME }} .
+    
+    - name: Sign the Vertx Redis Client image with GitHub OIDC Token
+      run: |
+        cosign sign --yes localhost:5000/${{ env.VERTX_IMAGE_NAME }}   
+        
+    # - name: Load the Vert.x Redis Client image into Kind
+    #   run: |
+    #     kind load docker-image localhost:5000/${{ env.VERTX_IMAGE_NAME }} --name kind-smoke-test
+        
+    # - name: Test Redis Connection with Vert.x Application
+    #   run: |
+    #     set +e
+    #     kubectl run --rm -i --tty test-vertx-redis --image=localhost:5000/${{ env.VERTX_IMAGE_NAME }} --restart=Never
+    #     if [[ $? -ne 0 ]]; then
+    #       echo "kubectl run failed. Gathering logs and describe information..."
+    #       kubectl describe pod test-vertx-redis
+    #       kubectl logs test-vertx-redis
+    #       kubectl get events --namespace default
+    #     fi
+    - name: Delete Kind Cluster
+      if: always()
+      run: |
+        kind delete cluster --name kind-smoke-test
