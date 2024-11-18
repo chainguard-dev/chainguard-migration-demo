@@ -37,16 +37,13 @@ jobs:
   
       - name: 'Verify Redis Image Signature && pre-pull image'
         run: |
+          echo "REDIS_IMAGE_FULL_REF=${{ env.REDIS_IMAGE }}:${{ env.REDIS_IMAGE_TAG }}" >> $GITHUB_ENV
           cosign verify \
               --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
               --certificate-identity=https://github.com/chainguard-images/images-private/.github/workflows/release.yaml@refs/heads/main \
-              ${{ env.REDIS_IMAGE_NAME }} | jq        
-          docker pull ${{ env.REDIS_IMAGE_NAME }}
+              ${{ env.REDIS_IMAGE_FULL_REF }} | jq        
+          docker pull ${{ env.REDIS_IMAGE_FULL_REF }}
           
-      - name: Set up environment
-        run: |
-          echo "REDIS_IMAGE_FULL_REF=${{ env.REDIS_IMAGE }}:${{ env.REDIS_IMAGE_TAG }}" >> $GITHUB_ENV
-
       - name: Get current image digest
         id: get_digest
         run: |
