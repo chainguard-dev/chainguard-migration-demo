@@ -63,7 +63,9 @@ jobs:
       - name: Compare unique tags
         id: compare_unique_tags
         run: |
-          if [ ${{ env.CURRENT_UNIQUE_TAG }} " != "${{ env.LATEST_UNIQUE_TAG }} " ]; then
+          echo "CURRENT_UNIQUE_TAG=${{ env.CURRENT_UNIQUE_TAG }}"
+          echo "LATEST_UNIQUE_TAG=${{ env.LATEST_UNIQUE_TAG }}"
+          if [ "${{ env.CURRENT_UNIQUE_TAG }}" != "${{ env.LATEST_UNIQUE_TAG }}" ]; then
             echo "UNIQUE_TAGS_CHANGED=true" >> $GITHUB_ENV
           else
             echo "UNIQUE_TAGS_CHANGED=false" >> $GITHUB_ENV
