@@ -26,8 +26,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v2
-      - uses: imjasonh/setup-crane@v0.1
+      - uses: actions/setup-go@v5
+      - uses: imjasonh/setup-crane@v4
       
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.7.0
