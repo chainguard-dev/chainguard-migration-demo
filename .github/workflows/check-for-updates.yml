@@ -3,6 +3,9 @@ name: Check for CVE fixes
 on:
   # schedule:
   #   - cron: "*/60 * * * *" # Every 60 minutes
+  push:
+    paths:
+      - 'helm/redis/values.yaml'
   workflow_dispatch: # Allows manual triggering
 
 env:
