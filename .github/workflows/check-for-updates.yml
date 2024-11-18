@@ -1,4 +1,4 @@
-name: Redis Image Digest Check
+name: Check for CVE fixes
 
 on:
   # schedule:
