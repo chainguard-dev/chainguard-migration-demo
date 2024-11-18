@@ -38,7 +38,7 @@ jobs:
       - name: Get current image digest
         id: get_digest
         run: |
-          CURRENT_DIGEST=$(crane digest ${{ env.REDIS_IMAGE_FULL_REF }})
+          CURRENT_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.REDIS_IMAGE_FULL_REF }})
           echo "CURRENT_DIGEST=${CURRENT_DIGEST}" >> $GITHUB_ENV
 
       - name: Download previous digest
