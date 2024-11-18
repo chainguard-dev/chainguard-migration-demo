@@ -26,9 +26,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
-      - uses: imjasonh/setup-crane@v0.4
+      - name: Setup Go environment
+        uses: actions/setup-go@v5.1.0
       
+      - name: Install Crane
+        run: go install github.com/google/go-containerregistry/cmd/crane@latest
+        
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.7.0
       
