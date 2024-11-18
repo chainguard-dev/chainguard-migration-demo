@@ -1,13 +1,18 @@
 name: Redis Image Digest Check
 
 on:
-  schedule:
-    - cron: "*/60 * * * *" #Every 60 minutes
+  # schedule:
+  #   - cron: "*/60 * * * *" # Every 60 minutes
   workflow_dispatch: # Allows manual triggering
 
 env:
-  REDIS_IMAGE_NAME: "cgr.dev/chainguard-private/redis:latest"
-
+  REDIS_IMAGE: "cgr.dev/chainguard-private/redis"
+  REDIS_IMAGE_TAG: "latest"
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_REPO: ${{ github.repository }}
+  PINNED: true
+  CLOSE_PREVIOUS: true
+  
 jobs:
   check_digest:
     runs-on: ubuntu-latest
@@ -18,24 +23,18 @@ jobs:
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.7.0
       
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.7.0
-    
-      - uses: azure/setup-helm@v4.2.0
-        id: install
-      
       - uses: chainguard-dev/setup-chainctl@v0.2.4
         with:
           identity: "4cf15780a13a9b6576d8b357e6524554c8c12a18/00fd46c815996c70"
         
       - name: Set up environment
         run: |
-          echo "REDIS_IMAGE_NAME=${{ env.REDIS_IMAGE_NAME }}" >> $GITHUB_ENV
+          echo "REDIS_IMAGE_FULL_REF=${{ env.REDIS_IMAGE }}:${{ env.REDIS_IMAGE_TAG }}" >> $GITHUB_ENV
 
       - name: Get current image digest
         id: get_digest
         run: |
-          CURRENT_DIGEST=$(crane digest ${{ env.REDIS_IMAGE_NAME }})
+          CURRENT_DIGEST=$(crane digest ${{ env.REDIS_IMAGE_FULL_REF }})
           echo "CURRENT_DIGEST=${CURRENT_DIGEST}" >> $GITHUB_ENV
 
       - name: Download previous digest
@@ -73,20 +72,43 @@ jobs:
 
       - name: Run chainctl images diff
         if: env.DIGEST_CHANGED == 'true'
+        id: diff_vulnerabilities
         run: |
           OLD_IMAGE="${{ env.REDIS_IMAGE_NAME }}@${{ env.PREVIOUS_DIGEST }}"
           NEW_IMAGE="${{ env.REDIS_IMAGE_NAME }}@${{ env.CURRENT_DIGEST }}"
 
-          DIFF_OUTPUT=$(chainctl images diff $OLD_IMAGE $NEW_IMAGE 2>/dev/null | jq '.vulnerabilities.removed[] | select(.severity == "Critical" or .severity == "High") .id')
+          DIFF_OUTPUT=$(chainctl images diff $OLD_IMAGE $NEW_IMAGE 2>/dev/null | jq '.vulnerabilities.removed[] | select(.severity == "Critical" or .severity == "High") .id' -r)
+          echo "DIFF_OUTPUT=$DIFF_OUTPUT" >> $GITHUB_ENV
 
           if [ -n "$DIFF_OUTPUT" ]; then
-            echo "Critical or High vulnerabilities have been remediated since we last deployed"
-            echo "Automatically triggering a new release"
-            echo "$DIFF_OUTPUT"
+            CVE_LIST=$(echo "$DIFF_OUTPUT" | tr '\n' ',' | sed 's/,$//')
+            echo "CVE_LIST=${CVE_LIST}" >> $GITHUB_ENV
             echo "FIX_CVE=true" >> $GITHUB_ENV
           else
-            echo "No critical or high vulnerabilities have been removed."
             echo "FIX_CVE=false" >> $GITHUB_ENV
+
+      - name: Create a CVE Triage issue
+        if: env.FIX_CVE == 'true'
+        run: |
+          TITLE="$REDIS_IMAGE_FULL_REF has an available CVE Fix"
+          BODY="### Fixed CVEs\n\n- $(echo "$DIFF_OUTPUT" | sed 's/^/- /')"
+          if [[ $CLOSE_PREVIOUS == true ]]; then
+            previous_issue_number=$(gh issue list \
+              --label "$CVE_LIST" \
+              --json number \
+              --jq '.[0].number')
+            if [[ -n $previous_issue_number ]]; then
+              gh issue close "$previous_issue_number"
+              gh issue unpin "$previous_issue_number"
+            fi
+          fi
+          new_issue_url=$(gh issue create \
+            --title "$TITLE" \
+            --label "$CVE_LIST" \
+            --body "$BODY")
+          if [[ $PINNED == true ]]; then
+            gh issue pin "$new_issue_url"
+          fi
 
       - name: Trigger release workflow
         if: env.FIX_CVE == 'true'
