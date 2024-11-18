@@ -1,0 +1,132 @@
+name: Check for CVE fixes
+
+on:
+  # schedule:
+  #   - cron: "*/60 * * * *" # Every 60 minutes
+  push:
+    paths:
+      - 'helm/redis/values.yaml'
+  workflow_dispatch: # Allows manual triggering
+
+env:
+  REDIS_IMAGE: "cgr.dev/cgr-demo.com/redis"
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_REPO: ${{ github.repository }}
+  PINNED: true
+  CLOSE_PREVIOUS: true
+  
+jobs:
+  check-for-fixes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v2
+      - uses: imjasonh/setup-crane@v0.1
+      
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.7.0
+      
+      - uses: chainguard-dev/setup-chainctl@v0.2.4
+        with:
+          identity: "4cf15780a13a9b6576d8b357e6524554c8c12a18/360614f2fd18f22d"
+        
+      - name: 'Auth to Registry'
+        run: |
+          chainctl auth configure-docker
+  
+      - name: Extract unique image.tag value
+        id: extract_unique_tag
+        run: |
+          CURRENT_UNIQUE_IMAGE=$(yq '.image.tag' helm/redis/values.yaml)
+          echo "Extracted Unique Tags: $CURRENT_UNIQUE_IMAGE"
+          echo "currentunique-tag=$CURRENT_UNIQUE_IMAGE" >> $GITHUB_ENV
+
+      - name: 'Env Setup'
+        run: |
+          echo "REDIS_IMAGE_FULL_REF=${{ env.REDIS_IMAGE }}:${{ env.REDIS_IMAGE_TAG }}" >> $GITHUB_ENV
+      
+      - name: 'Verify Redis Image Signature && pre-pull image'
+        run: |
+          cosign verify \
+              --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+              --certificate-identity=https://github.com/chainguard-images/images-private/.github/workflows/release.yaml@refs/heads/main \
+              ${{ env.REDIS_IMAGE_FULL_REF }} | jq        
+          docker pull ${{ env.REDIS_IMAGE_FULL_REF }}
+          
+      - name: Get latest unique tag
+        id: get_current_unique_tag
+        run: |
+          LATEST_UNIQUE_TAG=$(crane ls ${{ env.REDIS_IMAGE_FULL_REF }} | grep -E '^[^ ]+-[0-9]{12}$' | grep -v '^latest' | sort -Vr | head -n 1
+          echo "latest-unique-tag=${LATEST_UNIQUE_TAG}" >> $GITHUB_ENV
+
+      - name: Compare unique tags
+        id: compare_unique_tags
+        run: |
+          if [ ${{ env.CURRENT_UNIQUE_TAG }} " != "${{ env.LATEST_UNIQUE_TAG }} " ]; then
+            echo "UNIQUE_TAGS_CHANGED=true" >> $GITHUB_ENV
+          else
+            echo "UNIQUE_TAGS_CHANGED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Run chainctl images diff
+        if: env.UNIQUE_TAGS_CHANGED == 'true'
+        id: diff_vulnerabilities
+        run: |
+          OLD_IMAGE="${{ env.REDIS_IMAGE_FULL_REF }}@${{ env.CURRENT_UNIQUE_TAG }}"
+          NEW_IMAGE="${{ env.REDIS_IMAGE_FULL_REF }}@${{ env.LATEST_UNIQUE_TAG }}"
+
+          DIFF_OUTPUT=$(chainctl images diff $OLD_IMAGE $NEW_IMAGE 2>/dev/null | jq '.vulnerabilities.removed[] | select(.severity == "Critical" or .severity == "High") .id' -r)
+          echo "DIFF_OUTPUT=$DIFF_OUTPUT" >> $GITHUB_ENV
+
+          if [ -n "$DIFF_OUTPUT" ]; then
+            CVE_LIST=$(echo "$DIFF_OUTPUT" | tr '\n' ',' | sed 's/,$//')
+            echo "CVE_LIST=${CVE_LIST}" >> $GITHUB_ENV
+            echo "FIX_CVE=true" >> $GITHUB_ENV
+          else
+            echo "FIX_CVE=false" >> $GITHUB_ENV
+
+      - name: Create a CVE Triage issue
+        if: env.FIX_CVE == 'true'
+        run: |
+          TITLE="$REDIS_IMAGE has an available CVE Fix"
+          BODY="### Fixed CVEs\n\n- $(echo "$DIFF_OUTPUT" | sed 's/^/- /')"
+          if [[ $CLOSE_PREVIOUS == true ]]; then
+            previous_issue_number=$(gh issue list \
+              --label "$CVE_LIST" \
+              --json number \
+              --jq '.[0].number')
+            if [[ -n $previous_issue_number ]]; then
+              gh issue close "$previous_issue_number"
+              gh issue unpin "$previous_issue_number"
+            fi
+          fi
+          new_issue_url=$(gh issue create \
+            --title "$TITLE" \
+            --label "$CVE_LIST" \
+            --body "$BODY")
+          if [[ $PINNED == true ]]; then
+            gh issue pin "$new_issue_url"
+          fi
+
+      - name: Commit and push updated values.yaml
+        if: env.UNIQUE_TAGS_CHANGED == 'true'
+        env:
+          CI_COMMIT_MESSAGE: Update Redis image tag to ${{ env.LATEST_UNIQUE_TAG }}
+          CI_COMMIT_AUTHOR: github-actions[bot]
+        run: |
+          git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
+          git config --global user.email "username@users.noreply.github.com"
+
+          if [[ `git status --porcelain helm/redis/values.yaml` ]]; then
+            git add helm/redis/values.yaml
+            git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
+            git push
+          else
+            echo "No changes to commit"
+          fi
