@@ -1,4 +1,4 @@
-name: Check Unique Tags for CVE fixes
+name: Check Floating Tags for CVE fixes
 
 on:
   # schedule:
