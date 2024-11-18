@@ -14,8 +14,12 @@ env:
   CLOSE_PREVIOUS: true
   
 jobs:
-  check_digest:
+  check-for-fixes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
