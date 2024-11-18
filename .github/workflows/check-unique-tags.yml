@@ -57,7 +57,7 @@ jobs:
       - name: Get latest unique tag
         id: get_current_unique_tag
         run: |
-          LATEST_UNIQUE_TAG=$(crane ls ${{ env.REDIS_IMAGE_FULL_REF }} | grep -E '^[^ ]+-[0-9]{12}$' | grep -v '^latest' | sort -Vr | head -n 1
+          LATEST_UNIQUE_TAG=$(crane ls ${{ env.REDIS_IMAGE_FULL_REF }} | grep -E '^[^ ]+-[0-9]{12}$' | grep -v '^latest' | sort -Vr | head -n 1)
           echo "latest-unique-tag=${LATEST_UNIQUE_TAG}" >> $GITHUB_ENV
 
       - name: Compare unique tags
