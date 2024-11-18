@@ -50,14 +50,10 @@ jobs:
           echo "Extracted Unique Tags: $CURRENT_UNIQUE_IMAGE"
           echo "CURRENT_UNIQUE_TAG=$CURRENT_UNIQUE_IMAGE" >> $GITHUB_ENV
 
-      - name: 'Env Setup'
-        run: |
-          echo "REDIS_IMAGE_FULL_REF=${{ env.REDIS_IMAGE }}:${{ env.REDIS_IMAGE_TAG }}" >> $GITHUB_ENV
-      
       - name: Get latest unique tag
         id: get_current_unique_tag
         run: |
-          LATEST_UNIQUE_TAG=$(crane ls ${{ env.REDIS_IMAGE_FULL_REF }} | grep -E '^[^ ]+-[0-9]{12}$' | grep -v '^latest' | sort -Vr | head -n 1)
+          LATEST_UNIQUE_TAG=$(crane ls ${{ env.REDIS_IMAGE }} | grep -E '^[^ ]+-[0-9]{12}$' | grep -v '^latest' | sort -Vr | head -n 1)
           echo "LATEST_UNIQUE_TAG=${LATEST_UNIQUE_TAG}" >> $GITHUB_ENV
 
       - name: Compare unique tags
@@ -75,8 +71,8 @@ jobs:
         if: env.UNIQUE_TAGS_CHANGED == 'true'
         id: diff_vulnerabilities
         run: |
-          OLD_IMAGE="${{ env.REDIS_IMAGE_FULL_REF }}@${{ env.CURRENT_UNIQUE_TAG }}"
-          NEW_IMAGE="${{ env.REDIS_IMAGE_FULL_REF }}@${{ env.LATEST_UNIQUE_TAG }}"
+          OLD_IMAGE="${{ env.REDIS_IMAGE }}@${{ env.CURRENT_UNIQUE_TAG }}"
+          NEW_IMAGE="${{ env.REDIS_IMAGE }}@${{ env.LATEST_UNIQUE_TAG }}"
 
           DIFF_OUTPUT=$(chainctl images diff $OLD_IMAGE $NEW_IMAGE 2>/dev/null | jq '.vulnerabilities.removed[] | select(.severity == "Critical" or .severity == "High") .id' -r)
           echo "DIFF_OUTPUT=$DIFF_OUTPUT" >> $GITHUB_ENV
