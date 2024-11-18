@@ -31,6 +31,18 @@ jobs:
         with:
           identity: "4cf15780a13a9b6576d8b357e6524554c8c12a18/360614f2fd18f22d"
         
+      - name: 'Auth to Registry'
+        run: |
+          chainctl auth configure-docker
+  
+      - name: 'Verify Redis Image Signature && pre-pull image'
+        run: |
+          cosign verify \
+              --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+              --certificate-identity=https://github.com/chainguard-images/images-private/.github/workflows/release.yaml@refs/heads/main \
+              ${{ env.REDIS_IMAGE_NAME }} | jq        
+          docker pull ${{ env.REDIS_IMAGE_NAME }}
+          
       - name: Set up environment
         run: |
           echo "REDIS_IMAGE_FULL_REF=${{ env.REDIS_IMAGE }}:${{ env.REDIS_IMAGE_TAG }}" >> $GITHUB_ENV
