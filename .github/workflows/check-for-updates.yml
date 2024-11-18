@@ -110,9 +110,9 @@ jobs:
             gh issue pin "$new_issue_url"
           fi
 
-      - name: Trigger release workflow
-        if: env.FIX_CVE == 'true'
-        uses: github.actions@v3
+      # - name: Trigger release workflow
+      #   if: env.FIX_CVE == 'true'
+      #   uses: github.actions@v3
         with:
           workflow: release.yml
           ref: main
