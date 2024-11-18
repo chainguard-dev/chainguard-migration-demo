@@ -1,4 +1,4 @@
-name: Check for CVE fixes
+name: Check Unique Tags for CVE fixes
 
 on:
   # schedule:
