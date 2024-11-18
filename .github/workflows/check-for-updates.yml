@@ -6,7 +6,7 @@ on:
   workflow_dispatch: # Allows manual triggering
 
 env:
-  REDIS_IMAGE: "cgr.dev/chainguard-private/redis"
+  REDIS_IMAGE: "cgr.dev/cgr-demo.com/redis"
   REDIS_IMAGE_TAG: "latest"
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GH_REPO: ${{ github.repository }}
