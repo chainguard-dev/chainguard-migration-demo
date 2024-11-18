@@ -83,6 +83,7 @@ jobs:
             echo "FIX_CVE=true" >> $GITHUB_ENV
           else
             echo "FIX_CVE=false" >> $GITHUB_ENV
+          fi
 
       - name: Create a CVE Triage issue
         if: env.FIX_CVE == 'true'
