@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          path: main
 
       - name: Setup Go environment
         uses: actions/setup-go@v5.1.0
