@@ -33,7 +33,7 @@ jobs:
         id: octo-sts
         with:
           scope: ${{ github.repository }}
-          identity: digestabot
+          identity: updates
           
       - name: Install Crane
         run: go install github.com/google/go-containerregistry/cmd/crane@latest
