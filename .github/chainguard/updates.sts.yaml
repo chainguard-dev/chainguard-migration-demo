@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 issuer: https://token.actions.githubusercontent.com
-subject: repo:chainguard-dev/chainguard-migration-demo:ref:refs/heads/main
+subject_pattern: repo:chainguard-dev/chainguard-migration-demo:ref:refs/heads/update.*
 
 permissions:
   contents: write
   pull_requests: write
+  workflows: write
