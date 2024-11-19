@@ -98,14 +98,14 @@ jobs:
         run: |
           git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
           git config --global user.email "username@users.noreply.github.com"
+          git config --global push.autoSetupRemote true
           
           BRANCH_NAME="update-helm-redis-image-tag"
           git checkout -b $BRANCH_NAME
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
           yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
           git add helm/redis/values.yaml
           git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
-          git push --set-upstream origin main
+          git push
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Create a Pull Request
