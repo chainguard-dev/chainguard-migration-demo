@@ -80,13 +80,11 @@ jobs:
           OLD_IMAGE="${{ env.REDIS_IMAGE }}:${{ env.CURRENT_UNIQUE_TAG }}"
           NEW_IMAGE="${{ env.REDIS_IMAGE }}:${{ env.LATEST_UNIQUE_TAG }}"
 
-          DIFF_OUTPUT=$(chainctl images diff $OLD_IMAGE $NEW_IMAGE 2>/dev/null | jq -r '.vulnerabilities.removed[] | select(.severity == "Critical" or .severity == "High") .id')
-          echo "DIFF_OUTPUT=$DIFF_OUTPUT" >> $GITHUB_ENV
+          CVE_LIST_JSON=$(chainctl images diff $OLD_IMAGE $NEW_IMAGE 2>/dev/null | jq -c '[.vulnerabilities.removed[] | select(.severity == "Critical" or .severity == "High") | .id]')
+          echo "CVE_LIST=$CVE_LIST_JSON" >> $GITHUB_ENV
 
-          if [ -n "$DIFF_OUTPUT" ]; then
-            CVE_LIST=$(echo "$DIFF_OUTPUT" | tr '\n' ',' | sed 's/,$//')
-            echo "Found CVE fixes for the following CVES:$CVE_LIST"
-            echo "CVE_LIST=\"$CVE_LIST\"" >> $GITHUB_ENV
+          if [ -n "$CVE_LIST_JSON" ]; then
+            echo "Found CVE fixes for the following CVES: $CVE_LIST_JSON"
             echo "FIX_CVE=true" >> $GITHUB_ENV
           else
             echo "No CVE fixes available"
@@ -115,7 +113,7 @@ jobs:
         run: |
           gh pr create \
             --title "Update Redis image tag to ${{ env.LATEST_UNIQUE_TAG }}" \
-            --body "This PR remdiates CVEs: ${{ env.CVE_LIST }}" \
+            --body "This PR remdiates CVEs: ${{ env.$CVE_LIST }}" \
             --head "${{ github.repository_owner }}:${{ env.BRANCH_NAME }}" \
             --base "main" \
             --label "CVE-fix"
