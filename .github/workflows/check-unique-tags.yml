@@ -108,6 +108,13 @@ jobs:
             gh issue pin "$new_issue_url"
           fi
 
+      - name: Update image.tag in values.yaml
+        if: env.UNIQUE_TAGS_CHANGED == 'true'
+        run: |
+          yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
+          echo "Updated image.tag in values.yaml to ${LATEST_UNIQUE_TAG}"
+          git status
+          
       - name: Commit and push updated values.yaml
         if: env.UNIQUE_TAGS_CHANGED == 'true'
         env:
