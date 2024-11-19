@@ -4,9 +4,9 @@
 issuer: https://token.actions.githubusercontent.com
 # Allow the console-ui repo to fetch the mono source code
 # including in the context of pull requests.
-subject_pattern: repo:chainguard-dev/console-migation-demo:.*
+subject_pattern: repo:chainguard-dev/chainguard-migation-demo:.*
 claim_pattern:
-  job_workflow_ref: chainguard-dev/console-migation-demo/.github/workflows/updates.yaml@.*
+  job_workflow_ref: chainguard-dev/chainguard-migation-demo/.github/workflows/updates.yaml@.*
 
 permissions:
   contents: write
