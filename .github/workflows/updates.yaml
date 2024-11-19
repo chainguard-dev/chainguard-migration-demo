@@ -104,19 +104,18 @@ jobs:
       - name: Create a new branch and commit changes
         if: env.FIX_CVE == 'true'
         env:
-          CI_COMMIT_MESSAGE: "Update Helm Redis Image Tag"
-          CI_COMMIT_AUTHOR: github-actions[bot]
           GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
-          GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
         run: |
-          git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --global push.autoSetupRemote true
-          
+          BRANCH_NAME="updates-$(date +%Y%m%d%H%M%S)"
+          gh repo clone ${{ github.repository }} repo
+          cd repo
+          gh repo sync
           yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
-          git add helm/redis/values.yaml
-          git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
-          git push
+          gh repo fork --clone=false --remote=true --remote-name=updates
+          gh repo sync
+
+          gh branch create $BRANCH_NAME
+          gh repo push origin $BRANCH_NAME
           # gh pr create \
           #   --title "Update Helm Redis Image Tag" \
           #   --body "This PR remdiates CVEs: \"${{ env.CVE_LIST }}\"" \
