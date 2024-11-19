@@ -76,7 +76,7 @@ jobs:
           OLD_IMAGE="${{ env.REDIS_IMAGE }}@${{ env.CURRENT_UNIQUE_TAG }}"
           NEW_IMAGE="${{ env.REDIS_IMAGE }}@${{ env.LATEST_UNIQUE_TAG }}"
 
-          DIFF_OUTPUT=$(chainctl images diff $OLD_IMAGE $NEW_IMAGE 2>/dev/null | jq '.vulnerabilities.removed[] | select(.severity == "Critical" or .severity == "High") .id' -r)
+          DIFF_OUTPUT=$(chainctl images diff $OLD_IMAGE $NEW_IMAGE 2>/dev/null | jq '.vulnerabilities.removed[] | select(.severity == "Critical" or .severity == "High") .id')
           echo "DIFF_OUTPUT=$DIFF_OUTPUT" >> $GITHUB_ENV
 
           if [ -n "$DIFF_OUTPUT" ]; then
