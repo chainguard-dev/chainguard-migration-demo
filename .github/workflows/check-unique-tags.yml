@@ -1,9 +1,10 @@
 name: Check Unique Tags for CVE fixes
 
 on:
-  # schedule:
-  #   - cron: "*/60 * * * *" # Every 60 minutes
+  schedule:
+    - cron: "*/60 * * * *" # Every 60 minutes
   push:
+    branches: [main]
     paths:
       - 'helm/redis/values.yaml'
   workflow_dispatch: # Allows manual triggering
