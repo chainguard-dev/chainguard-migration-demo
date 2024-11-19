@@ -1,1 +1,14 @@
+# Copyright 2024 Chainguard, Inc.
+# SPDX-License-Identifier: Apache-2.0
 
+issuer: https://token.actions.githubusercontent.com
+# Allow the console-ui repo to fetch the mono source code
+# including in the context of pull requests.
+subject_pattern: repo:chainguard-dev/console-migation-demo:.*
+claim_pattern:
+  job_workflow_ref: chainguard-dev/console-migation-demo/.github/workflows/updates.yaml@.*
+
+permissions:
+  contents: write
+  pull_requests: write
+  workflows: write
