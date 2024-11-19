@@ -111,7 +111,7 @@ jobs:
           cd repo
           gh repo sync
           yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
-          gh repo fork --clone=false --remote=true --remote-name=updates
+          gh repo chainguard-dev/chaingard-migration-demo --clone=false --remote=true --remote-name=updates
           gh repo sync
 
           gh branch create $BRANCH_NAME
