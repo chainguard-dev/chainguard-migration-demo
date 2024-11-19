@@ -113,7 +113,7 @@ jobs:
         run: |
           gh pr create \
             --title "Update Redis image tag to ${{ env.LATEST_UNIQUE_TAG }}" \
-            --body "This PR remdiates CVEs: ${{ env.$CVE_LIST }}" \
+            --body "This PR remdiates CVEs: ${{ env.CVE_LIST }}" \
             --head "${{ github.repository_owner }}:${{ env.BRANCH_NAME }}" \
             --base "main" \
             --label "CVE-fix"
