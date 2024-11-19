@@ -54,6 +54,7 @@ jobs:
       id: setup_full_image_ref
       run: |
         REDIS_IMAGE_FULL_REF="${{ env.REDIS_IMAGE_NAME }}:${{ env.CURRENT_UNIQUE_TAG }}"
+        echo "REDIS_IMAGE_FULL_REF=$REDIS_IMAGE_FULL_REF" >> $GITHUB_ENV
 
     - name: 'Verify Redis Image Signature && pre-pull image'
       run: |
