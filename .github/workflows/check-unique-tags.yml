@@ -96,7 +96,7 @@ jobs:
           git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
           git config --global user.email "username@users.noreply.github.com"
           
-          BRANCH_NAME="Deploy ${{ env.REDIS_IMAGE_FULL_REF }}"
+          BRANCH_NAME="${{ env.REDIS_IMAGE_FULL_REF }}"
           git checkout -b $BRANCH_NAME
           yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
           git add helm/redis/values.yaml
