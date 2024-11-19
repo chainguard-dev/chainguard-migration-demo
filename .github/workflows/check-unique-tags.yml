@@ -102,6 +102,7 @@ jobs:
           git add helm/redis/values.yaml
           git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
           git --set-upstream origin push
+          echo "BRANCH_NAME${BRANCH_NAME}" >> $GITHUB_ENV
 
       - name: Create a Pull Request
         if: env.UNIQUE_TAGS_CHANGED == 'true'
@@ -109,6 +110,6 @@ jobs:
           gh pr create \
             --title "Update Redis image tag to ${{ env.LATEST_UNIQUE_TAG }}" \
             --body "This PR remdiates CVEs: ${{ env.CVE_LIST }}" \
-            --head "${{ github.repository_owner }}:$BRANCH_NAME" \
+            --head "${{ github.repository_owner }}:${{ env.BRANCH_NAME }}" \
             --base "main" \
             --label "CVE-fix"
