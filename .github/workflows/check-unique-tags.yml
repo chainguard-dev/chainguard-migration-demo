@@ -81,9 +81,11 @@ jobs:
 
           if [ -n "$DIFF_OUTPUT" ]; then
             CVE_LIST=$(echo "$DIFF_OUTPUT" | tr '\n' ',' | sed 's/,$//')
-            echo "CVE_LIST=${CVE_LIST}" >> $GITHUB_ENV
+            echo "Found CVE fixes for the following CVES:$CVE_LIST"
+            echo "CVE_LIST=$CVE_LIST" >> $GITHUB_ENV
             echo "FIX_CVE=true" >> $GITHUB_ENV
           else
+            echo "No CVE fixes available"
             echo "FIX_CVE=false" >> $GITHUB_ENV
           fi
 
