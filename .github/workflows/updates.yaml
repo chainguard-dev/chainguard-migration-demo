@@ -106,19 +106,12 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
         run: |
+          cd $GITHUB_WORKSPACE
           BRANCH_NAME="updates-$(date +%Y%m%d%H%M%S)"
-          gh repo clone ${{ github.repository }} repo
-          cd repo
-          gh repo sync
+          git checkout main
+          git checkout -b $BRANCH_NAME
           yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
-          gh repo chainguard-dev/chaingard-migration-demo --clone=false --remote=true --remote-name=updates
-          gh repo sync
-
-          gh branch create $BRANCH_NAME
-          gh repo push origin $BRANCH_NAME
-          # gh pr create \
-          #   --title "Update Helm Redis Image Tag" \
-          #   --body "This PR remdiates CVEs: \"${{ env.CVE_LIST }}\"" \
-          #   --head "updates" \
-          #   --base "main" \
-          #   --label "CVE-fix"
+          git add helm/redis/values.yaml
+          git commit -m "Update Helm Redis Image Tag to ${{ env.LATEST_UNIQUE_TAG }}"
+          git push origin $BRANCH_NAME
+          gh pr create --title "Update Helm Redis Image Tag" --body "This PR remediates CVEs: \"${{ env.CVE_LIST }}\"" --head "$BRANCH_NAME" --base "main" --label "CVE-fix"
