@@ -9,7 +9,7 @@ on:
   workflow_dispatch: # Allows manual triggering
 
 env:
-  REDIS_IMAGE: "cgr.dev/cgr-demo.com/redis"
+  REDIS_IMAGE: "cgr.dev/cgr-demo.com/redis-server-bitnami"
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GH_REPO: ${{ github.repository }}
   PINNED: true
