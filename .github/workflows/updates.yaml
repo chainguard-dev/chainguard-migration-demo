@@ -100,8 +100,7 @@ jobs:
         env:
           CI_COMMIT_MESSAGE: "Update Helm Redis Image Tag"
           CI_COMMIT_AUTHOR: github-actions[bot]
-          GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
-          GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
+          token: ${{ steps.octo-sts.outputs.token }}
         run: |
           git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
