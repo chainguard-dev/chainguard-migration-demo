@@ -35,7 +35,8 @@ jobs:
         run: go install github.com/google/go-containerregistry/cmd/crane@latest
 
       - name: Install Grype
-        uses: anchore/scan-action@v5.2.1
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
         
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.7.0
