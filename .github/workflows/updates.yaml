@@ -109,11 +109,11 @@ jobs:
           GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
           GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
         run: |
-          git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
+          # git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global push.autoSetupRemote true
           
-          BRANCH_NAME="update-helm-redis-image-tag"
+          BRANCH_NAME="updates"
           git checkout -b $BRANCH_NAME
           yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
           git add helm/redis/values.yaml
