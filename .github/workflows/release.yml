@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  REDIS_IMAGE_NAME: "cgr.dev/cgr-demo.com/redis-server-bitnami:latest"
+  REDIS_IMAGE_NAME: "cgr.dev/cgr-demo.com/redis-server-bitnami"
   JAVA_BUILDER_IMAGE: "registry.access.redhat.com/ubi9/openjdk-17"
   JAVA_BUILDER_IMAGE_PACKAGE_MANAGER: "microdnf"
   JAVA_BUILDER_IMAGE_PACKAGE_MANAGER_CMD: "install"
@@ -43,13 +43,25 @@ jobs:
       run: |
         chainctl auth configure-docker
 
+    - name: Extract unique image.tag value
+      id: extract_unique_tag
+      run: |
+        CURRENT_UNIQUE_IMAGE=$(yq '.image.tag' helm/redis/values.yaml)
+        echo "Extracted Unique Tags: $CURRENT_UNIQUE_IMAGE"
+        echo "CURRENT_UNIQUE_TAG=$CURRENT_UNIQUE_IMAGE" >> $GITHUB_ENV
+    
+    - name: Setup image full ref env var
+      id: setup_full_image_ref
+      run: |
+        REDIS_IMAGE_FULL_REF="${{ env.REDIS_IMAGE_NAME }}:${{ env.CURRENT_UNIQUE_TAG }}"
+
     - name: 'Verify Redis Image Signature && pre-pull image'
       run: |
         cosign verify \
             --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
             --certificate-identity=https://github.com/chainguard-images/images-private/.github/workflows/release.yaml@refs/heads/main \
-            ${{ env.REDIS_IMAGE_NAME }} | jq        
-        docker pull ${{ env.REDIS_IMAGE_NAME }}
+            ${{ env.REDIS_IMAGE_FULL_REF }} | jq        
+        docker pull ${{ env.REDIS_FULL_REF }}
     
     - name: Add Bitnami Helm repository
       run: |
@@ -63,7 +75,7 @@ jobs:
 
     - name: Check if image is available in kind cluster
       run: |
-        kind load docker-image ${{ env.REDIS_IMAGE_NAME }} --name kind-smoke-test
+        kind load docker-image ${{ env.REDIS_IMAGE_FULL_REF }} --name kind-smoke-test
         echo "Image loaded into Kind cluster"
 
     - name: Deploy Redis Image using Helm
