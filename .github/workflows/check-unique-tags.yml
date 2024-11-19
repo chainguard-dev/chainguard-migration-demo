@@ -101,7 +101,7 @@ jobs:
           yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
           git add helm/redis/values.yaml
           git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
-          git push
+          git --set-upstream origin push
 
       - name: Create a Pull Request
         if: env.UNIQUE_TAGS_CHANGED == 'true'
