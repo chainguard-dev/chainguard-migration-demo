@@ -108,6 +108,8 @@ jobs:
 
       - name: Create a Pull Request
         if: env.FIX_CVE == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
             --title "Update Redis image tag to ${{ env.LATEST_UNIQUE_TAG }}" \
