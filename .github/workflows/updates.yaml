@@ -101,26 +101,26 @@ jobs:
           gh repo list
           
       - name: Create a new branch and commit changes
-          if: env.FIX_CVE == 'true'
-          env:
-            CI_COMMIT_MESSAGE: "Update Helm Redis Image Tag"
-            CI_COMMIT_AUTHOR: github-actions[bot]
-            GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
-            GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
-          run: |
-            git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git config --global push.autoSetupRemote true
-            
-            BRANCH_NAME="update-helm-redis-image-tag"
-            git checkout -b $BRANCH_NAME
-            yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
-            git add helm/redis/values.yaml
-            git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
-            git push
-            gh pr create \
-              --title "Update Helm Redis Image Tag" \
-              --body "This PR remdiates CVEs: \"${{ env.CVE_LIST }}\"" \
-              --head "$BRANCH_NAME" \
-              --base "main" \
-              --label "CVE-fix"
+        if: env.FIX_CVE == 'true'
+        env:
+          CI_COMMIT_MESSAGE: "Update Helm Redis Image Tag"
+          CI_COMMIT_AUTHOR: github-actions[bot]
+          GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
+        run: |
+          git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global push.autoSetupRemote true
+          
+          BRANCH_NAME="update-helm-redis-image-tag"
+          git checkout -b $BRANCH_NAME
+          yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
+          git add helm/redis/values.yaml
+          git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
+          git push
+          gh pr create \
+            --title "Update Helm Redis Image Tag" \
+            --body "This PR remdiates CVEs: \"${{ env.CVE_LIST }}\"" \
+            --head "$BRANCH_NAME" \
+            --base "main" \
+            --label "CVE-fix"
