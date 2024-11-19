@@ -61,7 +61,7 @@ jobs:
             --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
             --certificate-identity=https://github.com/chainguard-images/images-private/.github/workflows/release.yaml@refs/heads/main \
             ${{ env.REDIS_IMAGE_FULL_REF }} | jq        
-        docker pull ${{ env.REDIS_FULL_REF }}
+        docker pull ${{ env.REDIS_IMAGE_FULL_REF }}
     
     - name: Add Bitnami Helm repository
       run: |
