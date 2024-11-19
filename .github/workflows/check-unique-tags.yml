@@ -105,7 +105,7 @@ jobs:
           yq -i ".image.tag = \"${{ env.LATEST_UNIQUE_TAG }}\"" helm/redis/values.yaml
           git add helm/redis/values.yaml
           git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
-          git push
+          git push --set-upstream origin $BRANCH_NAME
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Create a Pull Request
