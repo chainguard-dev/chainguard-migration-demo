@@ -9,7 +9,7 @@
   <artifactId>vertx-redis-client-example</artifactId>
   <version>1.0</version>
   <properties>
-        <vertx-redis.version>5.0.0.CR1</vertx-redis.version>
+        <vertx-redis.version>5.0.7</vertx-redis.version>
   </properties>
 
   <dependencies>
